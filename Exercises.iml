@@ -10,5 +10,6 @@
     <orderEntry type="library" name="scala-sdk-2.13.3" level="application" />
     <orderEntry type="library" name="scala-sdk-2.13.3" level="application" />
     <orderEntry type="library" name="com.typesafe.akka:akka-actor_2.13:2.5.23" level="project" />
+    <orderEntry type="library" name="io.reactivex.rxjava3:rxjava:3.0.9" level="project" />
   </component>
 </module>
