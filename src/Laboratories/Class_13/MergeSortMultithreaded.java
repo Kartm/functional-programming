@@ -1,21 +1,20 @@
 package Laboratories.Class_13;
 
 import java.util.Arrays;
-import java.util.stream.Collectors;
 
 class Sorter extends Thread {
-    int[] internal;
+    int[] result;
 
-    public Sorter(int[] array) {
-        this.internal = array;
+    public Sorter(int[] originalArray) {
+        this.result = originalArray;
     }
 
     public void run() {
-        mergeSort(internal);
+        mergeSort(result);
     }
 
     public int[] getResult() {
-        return internal;
+        return result;
     }
 
     public void mergeSort(int[] array) {
@@ -26,93 +25,104 @@ class Sorter extends Thread {
             mergeSort(left);
             mergeSort(right);
 
-            merge(array, left, right);
+            mergeHalves(array, left, right);
         }
     }
 
-    public int[] leftHalf(int[] array) {
-        int size1 = array.length / 2;
-        int[] left = new int[size1];
-        for (int i = 0; i < size1; i++) {
-            left[i] = array[i];
+    public int[] leftHalf(int[] wholeArray) {
+        int leftSize = wholeArray.length / 2;
+
+        int[] left = new int[leftSize];
+
+        for (int i = 0; i < leftSize; i++) {
+            left[i] = wholeArray[i];
         }
+
         return left;
     }
 
-    public int[] rightHalf(int[] array) {
-        int size1 = array.length / 2;
-        int size2 = array.length - size1;
-        int[] right = new int[size2];
-        for (int i = 0; i < size2; i++) {
-            right[i] = array[i + size1];
+    public int[] rightHalf(int[] wholeArray) {
+        int leftSize = wholeArray.length / 2;
+        int rightSize = wholeArray.length - leftSize;
+        int[] right = new int[rightSize];
+
+        for (int i = 0; i < rightSize; i++) {
+            right[i] = wholeArray[i + leftSize];
         }
+
         return right;
     }
 
-    public void merge(int[] result, int[] left, int[] right) {
-        int i1 = 0;
-        int i2 = 0;
+    public void mergeHalves(int[] resultArray, int[] leftArray, int[] rightArray) {
+        int iLeft = 0;
+        int iRight = 0;
 
-        for (int i = 0; i < result.length; i++) {
-            if (i2 >= right.length || (i1 < left.length && left[i1] <= right[i2])) {
-                result[i] = left[i1];
-                i1++;
+        for (int i = 0; i < resultArray.length; i++) {
+            if (iRight >= rightArray.length || (iLeft < leftArray.length && leftArray[iLeft] <= rightArray[iRight])) {
+                resultArray[i] = leftArray[iLeft];
+                iLeft++;
             } else {
-                result[i] = right[i2];
-                i2++;
+                resultArray[i] = rightArray[iRight];
+                iRight++;
             }
         }
 
-        this.internal = result;
+        this.result = resultArray;
     }
 }
 
 public class MergeSortMultithreaded {
-    public static int[] finalMerge(int[] a, int[] b) {
-        if(a.length == 0) {
-            return b;
-        } else if (b.length == 0) {
-            return a;
+    public static int[] mergeResults(int[] leftArray, int[] rightArray) {
+        if(leftArray.length == 0) {
+            return rightArray;
+        } else if (rightArray.length == 0) {
+            return leftArray;
         }
-        int[] result = new int[a.length + b.length];
-        int i = 0;
-        int j = 0;
-        int r = 0;
-        while (i < a.length && j < b.length) {
-            if (a[i] <= b[j]) {
-                result[r] = a[i];
-                i++;
-                r++;
+
+        int[] resultArray = new int[leftArray.length + rightArray.length];
+        int iLeft = 0, iRight = 0, iResult = 0;
+
+        while (iLeft < leftArray.length && iRight < rightArray.length) {
+            if (leftArray[iLeft] <= rightArray[iRight]) {
+                resultArray[iResult] = leftArray[iLeft];
+                iLeft++;
             } else {
-                result[r] = b[j];
-                j++;
-                r++;
+                resultArray[iResult] = rightArray[iRight];
+                iRight++;
             }
-            if (i == a.length) {
-                while (j < b.length) {
-                    result[r] = b[j];
-                    r++;
-                    j++;
+            iResult++;
+
+            // edge case, we've reached the end of the array
+            if (iLeft == leftArray.length) {
+                while (iRight < rightArray.length) {
+                    resultArray[iResult] = rightArray[iRight];
+                    iResult++;
+                    iRight++;
                 }
             }
-            if (j == b.length) {
-                while (i < a.length) {
-                    result[r] = a[i];
-                    r++;
-                    i++;
+            if (iRight == rightArray.length) {
+                while (iLeft < leftArray.length) {
+                    resultArray[iResult] = leftArray[iLeft];
+                    iResult++;
+                    iLeft++;
                 }
             }
         }
 
-        return result;
+        return resultArray;
     }
 
     private static int[][] splitIntoSubarrays(int[] originalArray, int subarrays) {
         int[][] result = new int[subarrays][];
+        // round up
         int subarraySize = (int) Math.ceil((double)originalArray.length / subarrays);
 
         for (int i = 0; i < subarrays; i++) {
-            result[i] = Arrays.copyOfRange(originalArray, Math.min(i * subarraySize, originalArray.length), Math.min(i * subarraySize + subarraySize, originalArray.length));
+            result[i] = Arrays.copyOfRange(
+                    originalArray,
+                    Math.min(i * subarraySize, originalArray.length),
+                    Math.min(i * subarraySize + subarraySize, originalArray.length)
+            );
         }
 
         return result;
@@ -130,17 +140,16 @@ public class MergeSortMultithreaded {
             sorters[i].join();
         }
 
-        // assume at least one thread
+        // assumption there's at least one thread
         int[] result = sorters[0].getResult();
 
         for(int i = 1; i < threads; i++) {
-            result = finalMerge(result, sorters[i].getResult());
+            result = mergeResults(result, sorters[i].getResult());
         }
 
         return result;
     }
 
-    // pass threads as parameter
     public static void main(String[] args) throws InterruptedException {
         int threads = Runtime.getRuntime().availableProcessors();
 
