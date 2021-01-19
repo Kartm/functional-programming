@@ -1,15 +1,7 @@
 package Laboratories.Class_13;
 
-//MERGE-SORT (T, p, r):
-//     IF p <r:
-//         q → (p + r) / 2
-//         MERGE-SORT  (T, p, q)
-//         MERGE-SORT  (T, q + 1, r)
-//         MERGE (T, p, q, r)
-
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.stream.Collectors;
 
 class Sorter extends Thread {
     int[] internal;
@@ -76,9 +68,12 @@ class Sorter extends Thread {
 }
 
 public class MergeSortMultithreaded {
-    int threads = Runtime.getRuntime().availableProcessors();
-
     public static int[] finalMerge(int[] a, int[] b) {
+        if(a.length == 0) {
+            return b;
+        } else if (b.length == 0) {
+            return a;
+        }
         int[] result = new int[a.length + b.length];
         int i = 0;
         int j = 0;
@@ -117,35 +112,56 @@ public class MergeSortMultithreaded {
         int subarraySize = (int) Math.ceil((double)originalArray.length / subarrays);
 
         for (int i = 0; i < subarrays; i++) {
-            result[i] = Arrays.copyOfRange(originalArray, i * subarraySize, Math.min(i * subarraySize + subarraySize, originalArray.length));
+            result[i] = Arrays.copyOfRange(originalArray, Math.min(i * subarraySize, originalArray.length), Math.min(i * subarraySize + subarraySize, originalArray.length));
         }
 
         return result;
     }
 
-    private static int[] mergeSort(int[] originalArray) throws InterruptedException {
-        int[][] subarrays = splitIntoSubarrays(originalArray, 2);
-        Sorter sorter1 = new Sorter(subarrays[0]);
-        Sorter sorter2 = new Sorter(subarrays[1]);
+    private static int[] mergeSort(int[] originalArray, int threads) throws InterruptedException {
+        int[][] subarrays = splitIntoSubarrays(originalArray, threads);
 
-        sorter1.start();
-        sorter2.start();
+        Sorter[] sorters = new Sorter[threads];
+        for(int i = 0; i < threads; i++) {
+            sorters[i] = new Sorter(subarrays[i]);
+            sorters[i].start();
 
-        // wait until finish
-        sorter1.join();
-        sorter2.join();
+            // wait until finish
+            sorters[i].join();
+        }
 
-        return finalMerge(sorter1.getResult(), sorter2.getResult());
+        // assume at least one thread
+        int[] result = sorters[0].getResult();
+
+        for(int i = 1; i < threads; i++) {
+            result = finalMerge(result, sorters[i].getResult());
+        }
+
+        return result;
     }
 
     // pass threads as parameter
     public static void main(String[] args) throws InterruptedException {
+        int threads = Runtime.getRuntime().availableProcessors();
+
         int[] unsortedArray = new int[]{10, -9, 20, 100, 50};
 
-        System.out.println(Arrays.toString(mergeSort(unsortedArray)));
+        System.out.println(Arrays.toString(mergeSort(unsortedArray, threads)));
 
-        assert (mergeSort(new int[]{10, -9, 20, 100, 50}) == new int[]{-9, 1, 20, 50, 100});
-        assert (mergeSort(new int[]{}) == new int[]{});
-        assert (mergeSort(new int[]{1, 2, 3, 4, 5, 6}) == new int[]{1, 2, 3, 4, 5, 6});
+        assert (mergeSort(new int[]{10, -9, 20, 100, 50}, 4) == new int[]{-9, 1, 20, 50, 100});
+        assert (mergeSort(new int[]{}, 4) == new int[]{});
+        assert (mergeSort(new int[]{1, 2, 3, 4, 5, 6}, 4) == new int[]{1, 2, 3, 4, 5, 6});
+
+        assert (mergeSort(new int[]{10, -9, 20, 100, 50}, 3) == new int[]{-9, 1, 20, 50, 100});
+        assert (mergeSort(new int[]{}, 3) == new int[]{});
+        assert (mergeSort(new int[]{1, 2, 3, 4, 5, 6}, 3) == new int[]{1, 2, 3, 4, 5, 6});
+
+        assert (mergeSort(new int[]{10, -9, 20, 100, 50}, 2) == new int[]{-9, 1, 20, 50, 100});
+        assert (mergeSort(new int[]{}, 2) == new int[]{});
+        assert (mergeSort(new int[]{1, 2, 3, 4, 5, 6}, 2) == new int[]{1, 2, 3, 4, 5, 6});
+
+        assert (mergeSort(new int[]{10, -9, 20, 100, 50}, 1) == new int[]{-9, 1, 20, 50, 100});
+        assert (mergeSort(new int[]{}, 1) == new int[]{});
+        assert (mergeSort(new int[]{1, 2, 3, 4, 5, 6}, 1) == new int[]{1, 2, 3, 4, 5, 6});
     }
 }
