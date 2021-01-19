@@ -7,7 +7,9 @@ package Laboratories.Class_13;
 //         MERGE-SORT  (T, q + 1, r)
 //         MERGE (T, p, q, r)
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 class Sorter extends Thread {
     int[] internal;
@@ -110,14 +112,21 @@ public class MergeSortMultithreaded {
         return result;
     }
 
-    private static int[] mergeSort(int[] originalArray) throws InterruptedException {
-        int[] subArray1 = new int[originalArray.length / 2];
-        int[] subArray2 = new int[originalArray.length - originalArray.length / 2];
-        System.arraycopy(originalArray, 0, subArray1, 0, originalArray.length / 2);
-        System.arraycopy(originalArray, originalArray.length / 2, subArray2, 0, originalArray.length - originalArray.length / 2);
+    private static int[][] splitIntoSubarrays(int[] originalArray, int subarrays) {
+        int[][] result = new int[subarrays][];
+        int subarraySize = (int) Math.ceil((double)originalArray.length / subarrays);
 
-        Sorter sorter1 = new Sorter(subArray1);
-        Sorter sorter2 = new Sorter(subArray2);
+        for (int i = 0; i < subarrays; i++) {
+            result[i] = Arrays.copyOfRange(originalArray, i * subarraySize, Math.min(i * subarraySize + subarraySize, originalArray.length));
+        }
+
+        return result;
+    }
+
+    private static int[] mergeSort(int[] originalArray) throws InterruptedException {
+        int[][] subarrays = splitIntoSubarrays(originalArray, 2);
+        Sorter sorter1 = new Sorter(subarrays[0]);
+        Sorter sorter2 = new Sorter(subarrays[1]);
 
         sorter1.start();
         sorter2.start();
