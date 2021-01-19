@@ -155,6 +155,8 @@ public class MergeSortMultithreaded {
 
         int[] unsortedArray = new int[]{10, -9, 20, 100, 50};
 
+        System.out.println(Arrays.toString(unsortedArray));
+        System.out.printf("Sorting using %s threads. \n", threads);
         System.out.println(Arrays.toString(mergeSort(unsortedArray, threads)));
 
         assert (mergeSort(new int[]{10, -9, 20, 100, 50}, 4) == new int[]{-9, 1, 20, 50, 100});
